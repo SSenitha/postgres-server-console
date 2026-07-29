@@ -1,0 +1,42 @@
+name: Build and Release Windows Executable
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build executable with PyInstaller
+        run: |
+          python -m PyInstaller --noconfirm --onedir --windowed postgres_gui.py
+
+      - name: Compress built application into ZIP
+        run: |
+          Compress-Archive -Path dist/postgres_gui/* -DestinationPath Postgres-Control-Panel-Windows.zip
+
+      - name: Create GitHub Release and Upload Binary
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Postgres-Control-Panel-Windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
